@@ -14,7 +14,7 @@ url_thread = "https://www.messenger.com/api/graphqlbatch/"
 
 headers = config.headers
 
-class Fbms:
+class FacebookChatScraper:
   def __init__(self, args):
     self.ses = rq.Session()
     self.thread = args.thread
@@ -157,8 +157,8 @@ class Fbms:
 
 def main():
   args = parse_args()
-  fbms = Fbms(args)
-  fbms.run()
+  fbcs = FacebookChatScraper(args)
+  fbcs.run()
 
 
 # Validate correct command line arguments
