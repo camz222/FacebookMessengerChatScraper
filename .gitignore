@@ -1,0 +1,13 @@
+#OSX
+.DS_Store
+
+##PII
+data/
+
+##Python
+__pycache__/
+.ipynb_checkpoints/
+
+##PII
+data/
+FBChatScraperConfig.py
