@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+
+import os
 from collections import defaultdict
 from time import time
 import argparse
@@ -24,9 +26,10 @@ class FacebookChatScraper:
     self.number = args.number
     self.all = args.all
     
-    self.file = args.file
-    if self.file:
-      self.output_file = open("data/"+self.file, 'w')
+    if not os.path.isdir('data/'+str(self.thread)):
+      os.mkdir('data/'+str(self.thread))
+    self.output_text_file = open("data/"+str(self.thread)+'/chat.txt', 'w')
+    self.output_json_file = open("data/"+str(self.thread)+'/chat.json', 'w')
       
     self.fetched = 0
 
@@ -131,10 +134,15 @@ class FacebookChatScraper:
 
   def write_to_file(self, extracted_messages):
 
+    #sort by timestamp
     outList = sorted(extracted_messages, reverse=False, key=lambda x: x['timestamp'])
 
+    #write json
+    json.dump(outList, self.output_json_file)
+
+    #write to file
     for node in outList:
-      self.output_file.write(str(node['timestamp'])
+      self.output_text_file.write(str(node['timestamp'])
                             +str(',')
                             +str(node['author'])
                             +str(',')
@@ -150,9 +158,9 @@ class FacebookChatScraper:
     return True
 
   def finish(self):
-    print("Download Completed, closing file...")
-    if self.file:
-      self.output_file.close()
+    print("Download of "+str(self.thread)+" Completed, closing file...")
+    self.output_text_file.close()
+    self.output_json_file.close()
 
 
 def main():
@@ -186,9 +194,6 @@ def parse_args():
 
   parser.add_argument('--before', type=check_negative, default=0,
             help='get messages starting before this timestamp')
-
-  parser.add_argument('--file', '-f',
-            help='file to save messages to')
             
   parser.add_argument('--user-message-count', '--umc',
             action='store_true',
