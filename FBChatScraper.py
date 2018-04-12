@@ -35,7 +35,10 @@ class Fbms:
     if self.user_message_count:
       self.user_message_counter = defaultdict(int)
 
+    self.extracted_messages = list()
+
   def run(self):
+
     messagesPerChunk = 1000
     iteration = 0
 
@@ -43,6 +46,8 @@ class Fbms:
       before = None
     else:
       before = self.before
+
+    messageLog = list()
 
     while (True): #if you have hit the end
 
@@ -54,14 +59,18 @@ class Fbms:
       #update before so next message download continue right before this chunk
       before = thread_contents['o0']['data']['message_thread']['messages']['nodes'][0]["timestamp_precise"] #timestamp of earliest messsage
 
-      #write messages to file
-      self.extract_messages(thread_contents)
-      
+      #get the interesting part, the message log, and append it to list of messages
+      for node in thread_contents['o0']['data']['message_thread']['messages']['nodes']:
+        self.extract_content_from_message_node(node)
+
       if (not thread_contents['o0']['data']['message_thread']['messages']["page_info"]["has_previous_page"]): #if you have hit the end
         break
 
       iteration+=1
-      
+
+    #write messages to file
+    self.write_to_file(self.extracted_messages)
+    
     self.finish()
 
   def download_thread(self, thread, messagesPerChunk, before):
@@ -107,31 +116,34 @@ class Fbms:
 
     return data
 
-# TODO change to a dict mapping used id -> name?
-  def extract_thread_members(self, payload):
-    """Return a list of all members of a thread"""
+  def extract_content_from_message_node(self, node):
+    #Get the content you want from each message
+      if(node.get('message') and node.get('message_sender') and node.get('timestamp_precise')): #if node has a message and a sender and a timestamp
+        messageDict = dict()
 
-    users = { config.request_data['__user'] }
-    users.update(set(payload['roger'][self.thread].keys()))
-    return users
+        messageDict['timestamp']  = int(node['timestamp_precise'])
+        messageDict['author']     = str(node['message_sender']['id'])
+        messageDict['text']       = str(node['message']['text'])
 
+        self.extracted_messages.append(messageDict)
 
-  def extract_messages(self, thread_contents):
+      return
 
-    #get the interesting part, the message log
-    messageLog = (thread_contents['o0']['data']['message_thread']['messages']['nodes'])
+  def write_to_file(self, extracted_messages):
 
-    for node in reversed(messageLog):
-      if(node.get('message') and node.get('message_sender')):
-        self.output_file.write(str(node['message_sender']['id'])
-                    +str(',')
-                    +str(node['timestamp_precise'])
-                    +str(',')
-                    +str(node['message']['text'])
-                    +str('\n'))
+    outList = sorted(extracted_messages, reverse=False, key=lambda x: x['timestamp'])
+
+    for node in outList:
+      self.output_file.write(str(node['timestamp'])
+                            +str(',')
+                            +str(node['author'])
+                            +str(',')
+                            +str(node['text'])
+                            +str('\n'))
+    return 
 
   def handle_messages(self, messages):
-    #Perform specied actions on message
+    #Perform specied actions on messages
 
     #TO DO: Implement
 
